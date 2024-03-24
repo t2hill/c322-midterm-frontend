@@ -31,8 +31,6 @@
       <!-- Submit Button -->
       <button type="submit" id="submitButton1">Save your changes</button></br></br>
       <button type="submit" id="submitButton2">Save this quiz and start a new one</button>
-      <!-- <button type="submit" id="submitButton1" onclick="saveChanges()">Save your changes</button></br></br>
-      <button type="submit" id="submitButton2" onclick="saveAndRefresh()">Save this quiz and start a new one</button> -->
     </form>
     <h3>If you want to remove a question from the quiz you can click on the question here and it will be removed from the quiz</h3>
     <!-- Need Something here to display the cards -->
@@ -190,6 +188,13 @@
 
     // function to refresh the page
     async function saveAndRefresh() {
+      var quizTitle = document.getElementById("quizTitle").value;
+      quiz.title = quizTitle;
+      quiz.questionIds = [];
+      for (let question of addedQuestions) {
+        quiz.questionIds.push(question.id);
+      }
+      console.log(quiz);
       if (notInDB) {
         addTheQuiz();
       }
