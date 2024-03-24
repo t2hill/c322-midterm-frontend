@@ -1,0 +1,29 @@
+#takeQuiz .card {
+    margin: 0 auto;
+    max-width: 500px;
+}
+
+.buttons {
+    margin: 0 auto;
+    max-width: 500px;
+}
+
+.prevButton {
+    float: left;
+    margin-left: 0;
+}
+
+.nextButton {
+    float: right;
+    margin-right: 0;
+}
+
+.questionsLeft {
+    margin: 0 auto;
+    text-align: center;
+}
+
+.score {
+    margin: 0 auto;
+    text-align: center;
+}

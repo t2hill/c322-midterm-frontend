@@ -4,8 +4,260 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Document</title>
+  <link rel="stylesheet" href="navbar.css">
+  <link rel="stylesheet" href="general.css">
+  <link rel="stylesheet" href="cards.css">
+  <link rel="stylesheet" href="make-a-quiz.css">
 </head>
 <body>
+  <ul class="topnav">
+    <li><a href="index.html">Home</a></li>
+    <li><a href="add-question.html">Add questions</a></li>
+    <li><a class="active" href="make-a-quiz.html">Create a quiz</a></li>
+    <li><a href="take-a-quiz.html">Take a quiz</a></li>
+    <li class="right"><a href="#about">About</a></li>
+  </ul>
+
+  <div class="questions">
+    <h2>Questions Bank</h2>
+    <h3>Click on a question to add it to the quiz.</h3>
+    <div id="list" class="cards"></div>
+  </div>
+  <div class="quiz">
+    <h2 id="numberOfAdded">The new quiz(0 questions)</h2>
+    <form id="myForm">
+      <label for="quizTitle">Quiz Title:</label> <input type="text" id="quizTitle" name="title"></br></br>
+      
+      <!-- Submit Button -->
+      <button type="submit" id="submitButton1">Save your changes</button></br></br>
+      <button type="submit" id="submitButton2">Save this quiz and start a new one</button>
+      <!-- <button type="submit" id="submitButton1" onclick="saveChanges()">Save your changes</button></br></br>
+      <button type="submit" id="submitButton2" onclick="saveAndRefresh()">Save this quiz and start a new one</button> -->
+    </form>
+    <h3>If you want to remove a question from the quiz you can click on the question here and it will be removed from the quiz</h3>
+    <!-- Need Something here to display the cards -->
+    <div id="toAdd" class="cards"></div>
+  </div>
   
+  <script>
+    let host = "http://localhost:8080";
+    let questions = [];
+    let addedQuestions = [];
+    let notInDB = true;
+    let quiz = {};
+    let count = 0;
+    displayTheQuestions();
+
+    async function getAll() {
+      let response = await fetch(host + "/questions");
+      let result = await response.json();
+      return result;
+    }
+
+    // Function to update the number of questions in the new quiz
+    async function updateNumberOfQuestionsAdded(num) {
+      var numberOfAddedElement = document.getElementById("numberOfAdded");
+      count = count + num;
+      numberOfAddedElement.textContent = "The new quiz(" + count + " questions)";
+    }
+
+    async function displayTheQuestions() {
+      if (questions.length == 0) {
+        questions = await getAll();
+      }
+
+      let list = document.getElementById("list");
+      list.innerHTML = "";
+
+      // Need to check which questions have already been added
+      for (let question of questions) {
+        if (!addedQuestions.includes(question)) {
+          let div = document.createElement("div");
+          div.className = "card";
+          let innerHtml = `
+          
+          <button onclick=addToQuiz(${question.id})>
+            <img src="http://localhost:8080/questions/${question.id}/image" alt="question" style="width:100%">
+            <div class="container">
+              <h4><b>${question.id}</b></h4> 
+              <p>${question.description}</p>
+              <form>
+                  <input type="radio" id="q${question.id}optionA" name="q2Answer" value="A">
+                  <label for="q${question.id}optionA">${question.choices[0]}</label><br>
+
+                  <input type="radio" id="q${question.id}optionB" name="q2Answer" value="B">
+                  <label for="q${question.id}optionB">${question.choices[1]}</label><br>
+
+                  <input type="radio" id="q${question.id}optionC" name="q2Answer" value="C">
+                  <label for="q${question.id}optionC">${question.choices[2]}</label><br>       
+              </form> 
+            </div>
+          </button>
+      
+            `;
+          div.innerHTML = innerHtml;
+          list.appendChild(div);
+        }
+      }
+    }
+
+    // function to add card to addedQuestions
+    async function addToQuiz(id) {
+      for (let question of questions) {
+        if (question.id == id) {
+          addedQuestions.push(question);
+        }
+      }
+      displayTheQuestions();
+      displayAddedQuestions();
+      updateNumberOfQuestionsAdded(1);
+    }
+
+    // function to remove card from addedQuestions
+    async function removeFromQuiz(id) {
+      index = 0;
+      if (addedQuestions.length == 1) {
+        addedQuestions = [];
+      }
+      for (let question of addedQuestions) {
+        if (question.id == id) {
+          if (index > 0) {
+            addedQuestions.splice(index, index);
+          }
+          else {
+            addedQuestions.splice(0, 1);
+          }
+        }
+        index++;
+      }
+      displayTheQuestions();
+      displayAddedQuestions();
+      updateNumberOfQuestionsAdded(-1);
+    }
+
+    // function to display all cards added
+    async function displayAddedQuestions() {
+      let list = document.getElementById("toAdd");
+      list.innerHTML = "";
+
+      for (let question of addedQuestions) {
+        let div = document.createElement("div");
+        div.className = "card";
+        let innerHtml = `
+          
+          <button onclick=removeFromQuiz(${question.id})>
+            <img src="http://localhost:8080/questions/${question.id}/image" alt="question" style="width:100%">
+            <div class="container">
+              <h4><b>${question.id}</b></h4> 
+              <p>${question.description}</p>
+              <form>
+                  <input type="radio" id="q${question.id}optionA" name="q2Answer" value="A">
+                  <label for="q${question.id}optionA">${question.choices[0]}</label><br>
+
+                  <input type="radio" id="q${question.id}optionB" name="q2Answer" value="B">
+                  <label for="q${question.id}optionB">${question.choices[1]}</label><br>
+
+                  <input type="radio" id="q${question.id}optionC" name="q2Answer" value="C">
+                  <label for="q${question.id}optionC">${question.choices[2]}</label><br>       
+              </form> 
+            </div>
+          </button>
+      
+            `;
+          div.innerHTML = innerHtml;
+          list.appendChild(div);
+      }
+    }
+
+    // function to save changes
+    async function saveChanges() {
+      var quizTitle = document.getElementById("quizTitle").value;
+      quiz.title = quizTitle;
+      quiz.questionIds = [];
+      for (let question of addedQuestions) {
+        quiz.questionIds.push(question.id);
+      }
+      console.log(quiz);
+
+      if (notInDB) {
+        addTheQuiz();
+        notInDB = false;
+      }
+      else {
+        updateQuiz();
+      }
+    }
+
+    // function to refresh the page
+    async function saveAndRefresh() {
+      if (notInDB) {
+        addTheQuiz();
+      }
+      else {
+        updateQuiz();
+      }
+      location.href = "make-a-quiz.html";
+    }
+
+    // function to add new quiz to database
+    async function addTheQuiz() {
+      let message = "";
+
+      let request = {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(quiz),
+      };
+      let response = await fetch(host + "/quizzes", request);
+      let responseData = await response.json();
+      quiz.id = responseData;
+      if (response.status == 200) {
+        message = "The quiz was added successfully!";
+      } else {
+        console.log(response);
+        message = "Something went wrong! Question data could not be saved.";
+      }
+      alert(message);
+    }
+
+    // function to update the quiz already in database
+    async function updateQuiz() {
+      let message = "";
+
+      let request = {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(quiz),
+      };
+      let response = await fetch(host + "/quizzes/" + quiz.id, request);
+      if (response.status == 200) {
+        message = "The quiz was updated successfully!";
+      } else {
+        console.log(response);
+        message = "Something went wrong! Question data could not be updated.";
+      }
+      alert(message);
+    }
+
+  // Add an event listener for the 'submit' event
+  const submitButton1 = document.querySelector('#submitButton1');
+  const submitButton2 = document.querySelector('#submitButton2')
+  submitButton1.addEventListener('click', function(event) {
+    // Prevent the default form submission behavior
+    event.preventDefault();
+
+    saveChanges();
+  });
+  submitButton2.addEventListener('click', function(event) {
+    // Prevent the default form submission behavior
+    event.preventDefault();
+
+    saveAndRefresh();
+  });
+  </script>
 </body>
 </html>

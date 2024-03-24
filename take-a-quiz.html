@@ -4,8 +4,208 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Document</title>
+  <link rel="stylesheet" href="navbar.css">
+  <link rel="stylesheet" href="general.css">
+  <link rel="stylesheet" href="cards.css">
+  <link rel="stylesheet" href="take-a-quiz.css">
 </head>
 <body>
+  <div id="takeQuiz">
+    <ul class="topnav">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="add-question.html">Add questions</a></li>
+      <li><a href="make-a-quiz.html">Create a quiz</a></li>
+      <li><a class="active" href="take-a-quiz.html">Take a quiz</a></li>
+      <li class="right"><a href="#about">About</a></li>
+    </ul>
   
+    <h3>Here are the list of all available quizzes. Click on a quiz to start taking the quiz.</h3>
+    <div id="list" class="cards"></div>
+  </div>
+
+  <script>
+    let host = "http://localhost:8080";
+    let quizzes = [];
+    let quiz = {};
+    let answers = [];
+    displayTheQuizzes();
+
+    // if (document.querySelector('.prevButton') != null) {
+    //   answers.pop();
+    // }
+
+    async function getAll() {
+      let response = await fetch(host + "/quizzes");
+      let result = await response.json();
+      return result;
+    }
+
+    async function displayTheQuizzes() {
+      if (quizzes.length == 0) {
+        quizzes = await getAll();
+      }
+
+      let list = document.getElementById("list");
+      list.innerHTML = "";
+
+      // Need to check which questions have already been added
+      for (let quiz of quizzes) {
+        let div = document.createElement("div");
+        div.className = "card";
+        let innerHtml = `
+        
+        <button onclick="takeQuiz(${quiz.id}, ${0})">
+          <div class="container">
+            <h4><b>${quiz.id}</b></h4> 
+            <p>${quiz.title}</p>
+            <p>(${quiz.questionIds.length} questions)
+          </div>
+        </button>
+    
+          `;
+        div.innerHTML = innerHtml;
+        list.appendChild(div);
+      }
+    }
+
+    // function that creates the quiz
+    async function takeQuiz(quizId, questionNum) {
+      let response = await fetch(host + "/quizzes/" + quizId);
+      quiz = await response.json();
+
+      let formatQuiz = document.getElementById("takeQuiz");
+      formatQuiz.innerHTML = "";
+
+      // Add the final score screen;
+      if (questionNum == quiz.questionIds.length) {
+        let numberCorrect = getScore();
+        formatQuiz.innerHTML = `
+
+        <ul class="topnav">
+          <li><a href="index.html">Home</a></li>
+          <li><a href="add-question.html">Add questions</a></li>
+          <li><a href="make-a-quiz.html">Create a quiz</a></li>
+          <li><a class="active" href="take-a-quiz.html">Take a quiz</a></li>
+          <li class="right"><a href="#about">About</a></li>
+        </ul>
+
+        <div class="score">
+          <h3>You completed the quiz ${quiz.title}.</h3>
+          <h3>You scored ${numberCorrect} out of ${quiz.questionIds.length}.</h3>
+        </div>
+
+        `;
+        return;
+      }
+
+      let div = document.createElement("div");
+      div.className = "card";
+      let id = quiz.questions[questionNum].id;
+      let innerHtml = `
+
+      <img src="http://localhost:8080/questions/${id}/image" alt="question" style="width:100%">
+      <div class="container">
+        <h4><b>${id}</b></h4> 
+        <p>${quiz.questions[questionNum].description}</p>
+        <form>
+            <input type="radio" id="q${id}optionA" name="q2Answer" value="${quiz.questions[questionNum].choices[0]}">
+            <label for="q${id}optionA">${quiz.questions[questionNum].choices[0]}</label><br>
+
+            <input type="radio" id="q${id}optionB" name="q2Answer" value="${quiz.questions[questionNum].choices[1]}">
+            <label for="q${id}optionB">${quiz.questions[questionNum].choices[1]}</label><br>
+
+            <input type="radio" id="q${id}optionC" name="q2Answer" value="${quiz.questions[questionNum].choices[2]}">
+            <label for="q${id}optionC">${quiz.questions[questionNum].choices[2]}</label><br>       
+        </form> 
+      </div>
+
+      `;
+      div.innerHTML = innerHtml;
+      formatQuiz.appendChild(div);
+
+      // Add functions for buttons
+      let buttons = document.createElement("div");
+      buttons.className = "buttons";
+
+      // Add functionality for next button
+      let questionsLeft = document.createElement("div");
+      questionsLeft.textContent = "(Question " + (questionNum+1) + " out of " + quiz.questionIds.length + ")";
+      questionsLeft.className = "questionsLeft"
+      buttons.appendChild(questionsLeft);
+      if (questionNum < quiz.questionIds.length) {
+        let nextButton = document.createElement("div");
+        nextButton.className = "nextButton";
+        let temp = questionNum + 1;
+        nextButton.innerHTML = `
+
+        <button class="nextButton" onclick="goNext(${quizId}, ${temp})">Next</button>
+        
+        `;
+        buttons.appendChild(nextButton);
+      }
+      // Add functionality for prev button
+      if (questionNum > 0) {
+        let prevButton = document.createElement("div");
+        prevButton.className = "prevButton";
+        let temp = questionNum - 1;
+        prevButton.innerHTML = `
+
+        <button class="prevButton" onclick="goPrev(${quizId}, ${temp})">Previous</button>
+        
+        `;
+        buttons.appendChild(prevButton);
+      }
+      formatQuiz.appendChild(buttons);
+    }
+
+    async function goNext(quizId, questionNum) {
+      // Get answers
+      var radioButtons = document.querySelectorAll('input[name="q2Answer"]:checked');
+
+      // Check if no radio button is selected
+      if (radioButtons.length === 0) {
+        // If none selected, show an alert asking the user to answer the question
+        alert('Please select an option.');
+        return;
+      }
+      else {
+        getFormAnswers();
+      }
+      takeQuiz(quizId, questionNum);
+    }
+
+    async function goPrev(quizId, questionNum) {
+      answers.pop();
+      takeQuiz(quizId, questionNum);
+    }
+
+    // function to get the answers from users from the form
+    async function getFormAnswers() {
+      var radios = document.getElementsByName('q2Answer');
+      // Loop through each radio button to find the selected one
+      for (var i = 0; i < radios.length; i++) {
+          if (radios[i].checked) {
+              var answer = radios[i].value;
+              answers.push(answer);
+              console.log(answers);
+              return true; // Exit the function once the selected answer is found
+          }
+      }
+      return false;
+    }
+
+    // function to create the final score screen
+    function getScore() {
+      let questions = quiz.questions;
+      let finalScore = 0;
+      for (var i = 0; i < questions.length; i++) {
+        if (questions[i].answer == answers[i]) {
+          finalScore += 1;
+        }
+      }
+      return finalScore;
+    }
+
+  </script>
 </body>
 </html>
