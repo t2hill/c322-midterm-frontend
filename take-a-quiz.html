@@ -24,15 +24,12 @@
   </div>
 
   <script>
-    let host = "http://localhost:8080";
+    // let host = "http://localhost:8080";
+    let host = "https://midterm-3rii.onrender.com";
     let quizzes = [];
     let quiz = {};
     let answers = [];
     displayTheQuizzes();
-
-    // if (document.querySelector('.prevButton') != null) {
-    //   answers.pop();
-    // }
 
     async function getAll() {
       let response = await fetch(host + "/quizzes");
